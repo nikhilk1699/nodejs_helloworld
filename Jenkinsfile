@@ -1,6 +1,6 @@
 pipeline {
   environment {
-    imagename = "nikhilk814/todoapp:v1"
+    imagename = "nikhilk814/hello-app:latest"
     registryCredential= 'dockerhub'
     dockerImage = ''
   }
@@ -33,7 +33,7 @@ pipeline {
     }
     stage('Release') {
       steps{
-        sh 'docker run -d --name notodoapp -p 8000:8000 nikhilk814/todoapp:v1'
+        sh 'docker run -d --name notodoapp -p 8000:8000 nikhilk814/hello-app:latest'
          
 
       }
