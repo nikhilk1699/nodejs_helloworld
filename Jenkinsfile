@@ -15,6 +15,21 @@ pipeline {
                 )
             }
         }
+        stage("Sonarqube Analysis "){
+            steps{
+                withSonarQubeEnv('sonar-server') {
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=nodejs_helloworld \
+                    -Dsonar.projectKey=nodejs_helloworld '''
+                }
+            }
+        }
+        stage("quality gate"){
+           steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token' 
+                }
+            } 
+        }
         stage('Building image') {
             steps {
                 script {
@@ -30,6 +45,11 @@ pipeline {
                         dockerImage.push('latest')
                     }
                 }
+            }
+        }
+        stage("TRIVY"){
+            steps{
+                sh "trivy image imagename > trivyimage.txt" 
             }
         }
         stage('CanaryDeploy Canary') {
