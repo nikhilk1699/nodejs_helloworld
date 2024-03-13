@@ -1,20 +1,24 @@
 pipeline {
+    agent any
     environment {
         imagename = "nikhilk814/hello-app:latest"
-        registryCredential= 'dockerhub'
+        registryCredential = 'dockerhub'
         dockerImage = ''
     }
-    agent any
     stages {
         stage('Cloning Git') {
             steps {
-                git([url: 'https://github.com/nikhilk1699/nodejs_helloworld.git', branch: 'master', credentialsId: 'github'])
+                git(
+                    url: 'https://github.com/nikhilk1699/nodejs_helloworld.git',
+                    branch: 'master',
+                    credentialsId: 'github'
+                )
             }
         }
         stage('Building image') {
             steps {
                 script {
-                    dockerImage = docker.build imagename
+                    dockerImage = docker.build(imagename)
                 }
             }
         }
@@ -34,10 +38,8 @@ pipeline {
             }
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                    script {
-                        sh "kubectl apply -f kube-canary.yml --kubeconfig=$KUBECONFIG"
-                        sh "kubectl set image deployment/helloworld-deployment-canary helloworld-nodejs=nikhilk814/hello-app:$BUILD_NUMBER"
-                    }
+                    sh "kubectl apply -f kube-canary.yml --kubeconfig=$KUBECONFIG"
+                    sh "kubectl set image deployment/helloworld-deployment-canary helloworld-nodejs=nikhilk814/hello-app:$BUILD_NUMBER"
                 }
             }
         }
@@ -47,12 +49,21 @@ pipeline {
             }
             steps {
                 withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
-                    script {
-                        sh "kubectl apply -f helloworld-kube.yml --kubeconfig=$KUBECONFIG"
-                        sh "kubectl set image deployment/helloworld-deployment helloworld-nodejs=nikhilk814/hello-app:$BUILD_NUMBER"
-                    }
+                    sh "kubectl apply -f helloworld-kube.yml --kubeconfig=$KUBECONFIG"
+                    sh "kubectl set image deployment/helloworld-deployment helloworld-nodejs=nikhilk814/hello-app:$BUILD_NUMBER"
                 }
             }
+        }
+    }
+    post {
+        always {
+            emailext attachLog: true,
+                subject: "${currentBuild.result}",
+                body: "Project: ${env.JOB_NAME}<br/>" +
+                    "Build Number: ${env.BUILD_NUMBER}<br/>" +
+                    "URL: ${env.BUILD_URL}<br/>",
+                to: 'nikhilkadam8114@gmail.com', // change to your email
+                attachmentsPattern: 'trivyfs.txt,trivyimage.txt'
         }
     }
 }
