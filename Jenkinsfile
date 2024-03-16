@@ -1,6 +1,7 @@
 pipeline {
     agent any
     environment {
+        SCANNER_HOME=tool 'sonar-scanner'
         imagename = "nikhilk814/hello-app:latest"
         registryCredential = 'dockerhub'
         dockerImage = ''
