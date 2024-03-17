@@ -286,6 +286,8 @@ sudo systemctl start grafana-server
 Go to http://<ip>:3000 and log in to the Grafana using default credentials. The username is admin, and the password is admin as well.
 username admin
 password admin
+![grafana_pass](https://github.com/nikhilk1699/nodejs_helloworld/assets/109533285/2f57ee54-52f0-4152-8d5e-3edf9889058c)
+
 To visualize metrics, you need to add a data source first.
 ![Screenshot 2024-03-13 181229](https://github.com/nikhilk1699/nodejs_helloworld/assets/109533285/f4dd39c0-12a9-4b93-aad4-4b1c4c2b48af)
 
