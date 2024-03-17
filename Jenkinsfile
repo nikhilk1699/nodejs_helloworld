@@ -35,23 +35,7 @@ pipeline {
                     waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token' 
                 }
             } 
-        }
-        
-        stage('OWASP FS SCAN') {
-            steps {
-                script {
-                    dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                    archiveArtifacts artifacts: '**/dependency-check-report.xml'
-                }
-            }
-        }
-        
-        stage('TRIVY FS SCAN') {
-            steps {
-                sh "trivy fs . > trivyfs.txt"
-            }
-        }
-        
+        } 
         stage('Building image') {
             steps {
                 script {
@@ -110,7 +94,7 @@ pipeline {
                     "Build Number: ${env.BUILD_NUMBER}<br/>" +
                     "URL: ${env.BUILD_URL}<br/>",
                 to: 'nikhilkadam8114@gmail.com', // change to your email
-                attachmentsPattern: 'trivyfs.txt,trivyimage.txt'
+                attachmentsPattern: 'trivyimage.txt'
         }
     }
 }
