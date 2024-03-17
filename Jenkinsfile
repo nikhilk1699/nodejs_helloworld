@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        SCANNER_HOME = tool 'sonar-scanner'
+        SCANNER_HOME=tool 'sonar-scanner'
         imagename = "nikhilk814/hello-app:latest"
         registryCredential = 'dockerhub'
         dockerImage = ''
@@ -16,35 +16,25 @@ pipeline {
                 )
             }
         }
-        stage("Sonarqube Analysis") {
-            steps {
-                script {
-                    withSonarQubeEnv('sonar-server') {
-                        sh """$SCANNER_HOME/bin/sonar-scanner \
-                            -Dsonar.projectName=nodejs_helloworld \
-                            -Dsonar.projectKey=nodejs_helloworld"""
-                    }
+        stage("Sonarqube Analysis "){
+            steps{
+                withSonarQubeEnv('sonar-server') {
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=nodejs_helloworld \
+                    -Dsonar.projectKey=nodejs_helloworld '''
                 }
             }
         }
-        stage("Quality Gate") {
-            steps {
-                timeout(time: 1, unit: 'HOURS') {
-                    script {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                        }
-                    }
+        stage("quality gate"){
+           steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token' 
                 }
-            }
+            } 
         }
         stage('OWASP FS SCAN') {
             steps {
-                script {
-                    sh "dependency-check --scan ./ --disableYarnAudit --disableNodeAudit"
-                }
-                junit allowEmptyResults: true, testResults: '**/dependency-check-report.xml'
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
             }
         }
         stage('TRIVY FS SCAN') {
@@ -69,9 +59,9 @@ pipeline {
                 }
             }
         }
-        stage("TRIVY") {
-            steps {
-                sh "trivy image $imagename > trivyimage.txt"
+        stage("TRIVY"){
+            steps{
+                sh "trivy image imagename > trivyimage.txt" 
             }
         }
         stage('CanaryDeploy Canary') {
@@ -109,3 +99,4 @@ pipeline {
         }
     }
 }
+ 
