@@ -1,11 +1,13 @@
 pipeline {
     agent any
+    
     environment {
-        SCANNER_HOME=tool 'sonar-scanner'
+        SCANNER_HOME = tool 'sonar-scanner'
         imagename = "nikhilk814/hello-app:latest"
         registryCredential = 'dockerhub'
         dockerImage = ''
     }
+    
     stages {
         stage('Cloning Git') {
             steps {
@@ -16,32 +18,40 @@ pipeline {
                 )
             }
         }
-        stage("Sonarqube Analysis "){
-            steps{
+        
+        stage("Sonarqube Analysis") {
+            steps {
                 withSonarQubeEnv('sonar-server') {
-                    sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=nodejs_helloworld \
-                    -Dsonar.projectKey=nodejs_helloworld '''
+                    sh ''' $SCANNER_HOME/bin/sonar-scanner \
+                        -Dsonar.projectName=nodejs_helloworld \
+                        -Dsonar.projectKey=nodejs_helloworld '''
                 }
             }
         }
-        stage("quality gate"){
-           steps {
+        
+        stage("Quality Gate") {
+            steps {
                 script {
                     waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token' 
                 }
             } 
         }
+        
         stage('OWASP FS SCAN') {
             steps {
-                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
-                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                script {
+                    dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                    archiveArtifacts artifacts: '**/dependency-check-report.xml'
+                }
             }
         }
+        
         stage('TRIVY FS SCAN') {
             steps {
                 sh "trivy fs . > trivyfs.txt"
             }
         }
+        
         stage('Building image') {
             steps {
                 script {
@@ -49,6 +59,7 @@ pipeline {
                 }
             }
         }
+        
         stage('Deploy Image') {
             steps {
                 script {
@@ -59,11 +70,13 @@ pipeline {
                 }
             }
         }
-        stage("TRIVY"){
-            steps{
-                sh "trivy image imagename > trivyimage.txt" 
+        
+        stage("TRIVY") {
+            steps {
+                sh "trivy image $imagename > trivyimage.txt" 
             }
         }
+        
         stage('CanaryDeploy Canary') {
             environment {
                 CANARY_REPLICAS = 1
@@ -75,6 +88,7 @@ pipeline {
                 }
             }
         }
+        
         stage('CanaryDeploy Production') {
             environment {
                 CANARY_REPLICAS = 0
@@ -87,6 +101,7 @@ pipeline {
             }
         }
     }
+    
     post {
         always {
             emailext attachLog: true,
@@ -99,4 +114,3 @@ pipeline {
         }
     }
 }
- 
